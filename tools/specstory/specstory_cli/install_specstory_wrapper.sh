@@ -93,11 +93,25 @@ if command -v conda >/dev/null 2>&1; then
   printf "Environment name: "
   read ENV_NAME
 
-  # Validate environment exists
-  ENV_PATH="$(conda env list | grep -E "^${ENV_NAME} " | awk '{print $2}')"
+  # Validate environment name is not empty or contains special characters
+  if [[ -z "$ENV_NAME" ]] || [[ "$ENV_NAME" =~ [^a-zA-Z0-9_-] ]]; then
+    echo "Error: Invalid environment name. Use only alphanumeric characters, underscores, and hyphens."
+    exit 1
+  fi
+
+  # Validate environment exists and get its path
+  ENV_PATH="$(conda env list | grep -E "^${ENV_NAME}[[:space:]]" | awk '{print $NF}')"
 
   if [[ -z "$ENV_PATH" ]]; then
     echo "Conda environment '$ENV_NAME' not found."
+    echo "Available environments:"
+    conda env list
+    exit 1
+  fi
+
+  # Validate the path exists and is a directory
+  if [[ ! -d "$ENV_PATH" ]]; then
+    echo "Error: Environment path '$ENV_PATH' is not a valid directory."
     exit 1
   fi
 
@@ -108,13 +122,7 @@ if command -v conda >/dev/null 2>&1; then
 
   cat > "$HOOK_DIR/specstory.sh" <<'EOF'
 export PATH="$HOME/bin:$PATH"
-# If a Claude CLI is installed, route 'claude' through SpecStory.
-# Otherwise, guide the user rather than hanging.
-if command -v claude >/dev/null 2>&1; then
-  alias claude="specstory run claude --no-cloud-sync"
-else
-  alias claude='echo "claude CLI not found. Install a Claude CLI, or launch the app via: specstory run open -a \"Claude\" --no-cloud-sync"'
-fi
+alias claude="specstory run claude --no-cloud-sync"
 EOF
 
   echo "✔ Hook installed for environment: $ENV_NAME"
