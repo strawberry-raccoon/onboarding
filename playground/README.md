@@ -41,6 +41,7 @@ npm install
 npx convert temperature 100 C F
 npx convert distance 5 km mi
 npx convert weight 200 g oz
+npx convert compare 5 km 3 mi
 ```
 
 ## Run tests
